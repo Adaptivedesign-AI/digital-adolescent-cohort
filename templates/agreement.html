@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Agreement - Digital Adolescents</title>
+    <link rel="icon" href="{{ url_for('static', filename='images/avatar/brain.png') }}" type="image/png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', 'Segoe UI', Roboto, sans-serif;
+            background-color: #FEFCF3;
+            color: #2e285c;
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .agreement-container {
+            background: white;
+            border-radius: 12px;
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 6px 16px rgba(46, 40, 92, 0.08);
+            border: 1px solid #e5e5e5;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .brain-icon {
+            margin-bottom: 15px;
+        }
+
+        .brain-icon img {
+            width: 50px;
+            height: 50px;
+            object-fit: contain;
+        }
+
+        .title {
+            color: #2e285c;
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .content {
+            margin-bottom: 30px;
+        }
+
+        .content p {
+            color: #2e285c;
+            font-size: 16px;
+            margin-bottom: 20px;
+            line-height: 1.7;
+        }
+
+        .content p:first-of-type {
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .agreement-form {
+            border-top: 2px solid #DBA39A;
+            padding-top: 25px;
+        }
+
+        .checkbox-container {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 25px;
+            gap: 12px;
+        }
+
+        .checkbox-wrapper {
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e5e5e5;
+            border-radius: 4px;
+            appearance: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: white;
+        }
+
+        .checkbox-wrapper input[type="checkbox"]:checked {
+            background-color: #F0DBDB;
+            border-color: #DBA39A;
+            position: relative;
+        }
+
+        .checkbox-wrapper input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #2e285c;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .checkbox-wrapper input[type="checkbox"]:hover {
+            border-color: #DBA39A;
+        }
+
+        .checkbox-label {
+            color: #2e285c;
+            font-size: 16px;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .continue-btn {
+            width: 100%;
+            background-color: #F0DBDB;
+            color: #2e285c;
+            border: 2px solid #DBA39A;
+            border-radius: 25px;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .continue-btn:hover:not(:disabled) {
+            background-color: #DBA39A;
+            border-color: #2e285c;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(46, 40, 92, 0.2);
+        }
+
+        .continue-btn:disabled {
+            background-color: #f5f5f5;
+            color: #999;
+            border-color: #ddd;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .footer-note {
+            margin-top: 20px;
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 768px) {
+            .agreement-container {
+                padding: 25px;
+                margin: 10px;
+            }
+
+            .title {
+                font-size: 24px;
+            }
+
+            .content p {
+                font-size: 15px;
+            }
+
+            .content p:first-of-type {
+                font-size: 16px;
+            }
+
+            .continue-btn {
+                font-size: 16px;
+                padding: 12px 25px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .agreement-container {
+                padding: 20px;
+            }
+
+            .title {
+                font-size: 20px;
+            }
+
+            .brain-icon img {
+                width: 40px;
+                height: 40px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="agreement-container">
+        <div class="header">
+            <h1 class="title">📋 User Agreement</h1>
+        </div>
+
+        <div class="content">
+            <p>By entering this page, you agree not to use these digital twin avatars to send and interact with harmful or inappropriate messages</p>
+            <p>Please accept to continue.</p>
+        </div>
+
+        <form class="agreement-form" id="agreementForm">
+            <div class="checkbox-container">
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="acceptTerms" required>
+                </div>
+                <label for="acceptTerms" class="checkbox-label">I accept the terms</label>
+            </div>
+
+            <button type="submit" class="continue-btn" id="continueBtn" disabled>
+                Continue
+            </button>
+
+            <p class="footer-note">
+                This platform is designed for research and educational purposes only.
+            </p>
+        </form>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkbox = document.getElementById('acceptTerms');
+            const continueBtn = document.getElementById('continueBtn');
+            const form = document.getElementById('agreementForm');
+
+            // 监听复选框状态变化
+            checkbox.addEventListener('change', function() {
+                continueBtn.disabled = !this.checked;
+            });
+
+            // 处理表单提交
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                if (checkbox.checked) {
+                    // 保存用户同意状态到本地存储
+                    localStorage.setItem('userAgreementAccepted', 'true');
+                    localStorage.setItem('agreementAcceptedTime', new Date().toISOString());
+                    
+                    // 添加加载效果
+                    continueBtn.textContent = 'Loading...';
+                    continueBtn.disabled = true;
+                    
+                    // 跳转到主页面
+                    setTimeout(function() {
+                        window.location.href = '/main';
+                    }, 800);
+                }
+            });
+
+            // 检查是否已经同意过协议
+            if (localStorage.getItem('userAgreementAccepted') === 'true') {
+                // 如果已经同意过，可以选择直接跳转或显示提示
+                console.log('User has previously accepted the agreement');
+            }
+        });
+    </script>
+</body>
+</html>
