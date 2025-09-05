@@ -456,7 +456,11 @@ all_prompts = load_prompts()
 # ================================
 
 @app.route('/')
-def index():
+def agreement_page():
+    return render_template('agreement.html')
+
+@app.route('/main')
+def main_page():
     if 'session_id' not in session:
         session['session_id'] = monitor.create_session()
     
@@ -474,7 +478,7 @@ def index():
 @app.route('/chat/<student_id>')
 def chat_page(student_id):
     if student_id not in name_dict:
-        return redirect('/')
+        return redirect('/main')
     
     if 'session_id' not in session:
         session['session_id'] = monitor.create_session()
