@@ -24,8 +24,7 @@
         <div class="character-card" data-student-id="{{ character.id }}">
             <div class="avatar-container">
                 <img src="{{ url_for('static', filename='images/' + character.avatar) }}" 
-                     alt="{{ character.name }}"
-                     onerror="this.src='{{ url_for('static', filename='images/default_avatar.png') }}'">
+                     alt="{{ character.name }}">
             </div>
             <div class="character-info">
                 <h3 class="student-name">{{ character.name }}</h3>
