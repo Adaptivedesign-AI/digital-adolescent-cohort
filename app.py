@@ -686,4 +686,27 @@ def admin_login():
         .form-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         .btn { background: #4a90e2; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
         .btn:hover { background: #357abd; }
-        .error { color: #ff6
+        .error { color: #ff6b6b; text-align: center; margin-bottom: 20px; padding: 10px; background: #ffe6e6; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="login-form">
+        <h2>Admin Login</h2>
+        ''' + (f'<div class="error">{error_message}</div>' if error_message else '') + '''
+        <form method="post">
+            <div class="form-group">
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <button type="submit" class="btn">Login</button>
+        </form>
+    </div>
+</body>
+</html>'''
+    
+    return login_html
+
+@app.route('/admin/logout')
+def admin_logout():
+    session.pop('admin_authenticated', None)
+    return redirect('/admin/login')
