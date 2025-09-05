@@ -855,14 +855,16 @@ def view_conversations():
     return html_content
 
 if __name__ == '__main__':
-    print("🔍 Enhanced data monitoring system started")
-    print("📊 Starting Flask server...")
+    print("Starting Flask server...")
     
+    # 获取端口号
     port = int(os.environ.get("PORT", 5000))
-    debug = os.environ.get("FLASK_ENV") == "development"
     
-    if os.environ.get("RENDER"):
-        print(f"🚀 Running in production mode on port {port}")
-    else:
-        print(f"🔧 Running in development mode on port {port}")
-        app.run(host="0.0.0.0", port=port, debug=debug)
+    print(f"Running on port {port}")
+    
+    # 启动 Flask 应用
+    app.run(
+        host="0.0.0.0",    # 允许外部访问
+        port=port,         # 使用环境变量提供的端口
+        debug=False        # 生产环境关闭调试
+    )
