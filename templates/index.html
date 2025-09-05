@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+{% block title %}Generative Digital Adolescent Cohort{% endblock %}
+{% block content %}
+<div class="container">
+    <!-- 页面头部 -->
+    <div class="page-header">
+        <div class="title-container">
+            <div class="brain-icon">
+                <img src="{{ url_for('static', filename='images/avatar/brain.png') }}" alt="Brain Icon" onerror="this.style.display='none'; this.parentNode.innerHTML='🧠';">
+            </div>
+            <h1 class="page-title">Generative Digital Adolescent Cohort</h1>
+        </div>
+        <h2 class="page-subtitle">Choose a digital adolescent to chat with</h2>
+        <p class="page-description">
+            These digital adolescents are AI-powered digital twins of real-world teens, designed to enable data-driven 
+            simulations of risk trajectories and intervention outcomes. The platform is developed and maintained by the 
+            UC Berkeley team. For inquiries or questions, please contact 
+            <a href="mailto:jingshenwang@berkeley.edu">jingshenwang@berkeley.edu</a>.
+        </p>
+    </div>
+
+    <!-- 分组显示学生 -->
+    {% for age_group_key, age_group in student_groups.items() %}
+    <div class="age-group">
+        <h2 class="age-group-title">{{ age_group.title }}</h2>
+        
+        {% for mh_group_key, mh_group in age_group.items() %}
+            {% if mh_group_key != 'title' and mh_group.students %}
+            <div class="mental-health-group">
+                <h3 class="mental-health-title">{{ mh_group.title }}</h3>
+                <div class="character-grid">
+                    {% for student in mh_group.students %}
+                    <div class="character-card" data-student-id="{{ student.id }}">
+                        <div class="avatar-container">
+                            <img src="{{ url_for('static', filename='images/avatar/' + student.id + '.png') }}" 
+                                 alt="{{ student.name }}"
+                                 onerror="this.src='{{ url_for('static', filename='images/default_avatar.png') }}'">
+                        </div>
+                        <div class="character-info">
+                            <h4 class="student-name">{{ student.name }}</h4>
+                            <p class="student-age">Age: {{ student.age }}</p>
+                            <p class="student-mental-health">{{ student.issues }}</p>
+                        </div>
+                        <button class="chat-btn" onclick="selectStudent('{{ student.id }}')">
+                            Start Chat
+                        </button>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+
+<!-- 加载动画 -->
+<div id="loading-overlay" class="loading-overlay" style="display: none;">
+    <div class="loading-spinner">
+        <div class="spinner"></div>
+        <p>Loading chat interface...</p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function selectStudent(studentId) {
+    // 显示加载动画
+    document.getElementById('loading-overlay').style.display = 'flex';
+    
+    // 添加选择效果
+    document.querySelectorAll('.character-card').forEach(card => {
+        card.classList.remove('selected');
+    });
+    document.querySelector(`[data-student-id="${studentId}"]`).classList.add('selected');
+    
+    // 延迟跳转以显示选择效果
+    setTimeout(() => {
+        window.location.href = `/chat/${studentId}`;
+    }, 500);
+}
+
+// 添加卡片点击效果
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.character-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            if (!e.target.classList.contains('chat-btn')) {
+                const studentId = this.dataset.studentId;
+                selectStudent(studentId);
+            }
+        });
+        
+        // 添加悬停效果
+        card.addEventListener('mouseenter', function() {
+            this.classList.add('hover');
+        });
+        
+        card.addEventListener('mouseleave', function() {
+            this.classList.remove('hover');
+        });
+    });
+});
+</script>
+{% endblock %}
