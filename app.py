@@ -1,4 +1,4 @@
-# app.py - Updated with student groups
+# app.py - Flask版本 (优化版数据监控 - 只保存对话)
 from flask import Flask, render_template, request, jsonify, session, redirect, Response
 import json
 import os
@@ -26,7 +26,7 @@ print(f"Admin Password configured: {'Yes' if os.environ.get('ADMIN_PASSWORD') el
 print(f"GitHub Data Sync configured: {'Yes' if os.environ.get('GITHUB_TOKEN') else 'No'}")
 
 # ================================
-# 数据定义 - 按分组重新组织
+# 数据定义
 # ================================
 
 name_dict = {
@@ -42,58 +42,17 @@ name_dict = {
     "student010": "Tyler"
 }
 
-# 学生年龄分组和心理健康状况
-student_groups = {
-    "middle_adolescence": {
-        "title": "Middle Adolescence (13-15 years)",
-        "mental_health_issues": {
-            "title": "Self-Reported Mental Health Issues",
-            "students": [
-                {"id": "student003", "name": "Emily", "age": 14, "issues": "Sadness, bullying"},
-                {"id": "student005", "name": "Aaliyah", "age": 15, "issues": "Periods of sadness"}
-            ]
-        },
-        "no_mental_health_issues": {
-            "title": "No Self-Reported Mental Health Issues", 
-            "students": [
-                {"id": "student001", "name": "Jaden", "age": 14, "issues": "None reported"},
-                {"id": "student004", "name": "Malik", "age": 13, "issues": "None reported"},
-                {"id": "student008", "name": "Brianna", "age": 15, "issues": "None reported"}
-            ]
-        }
-    },
-    "late_adolescence": {
-        "title": "Late Adolescence (16-17 years)",
-        "mental_health_issues": {
-            "title": "Self-Reported Mental Health Issues",
-            "students": [
-                # 根据数据，这个组没有学生
-            ]
-        },
-        "no_mental_health_issues": {
-            "title": "No Self-Reported Mental Health Issues",
-            "students": [
-                {"id": "student002", "name": "Ethan", "age": 16, "issues": "None reported"},
-                {"id": "student006", "name": "Brian", "age": 17, "issues": "None reported"},
-                {"id": "student007", "name": "Grace", "age": 16, "issues": "None reported"},
-                {"id": "student009", "name": "Leilani", "age": 17, "issues": "None reported"},
-                {"id": "student010", "name": "Tyler", "age": 16, "issues": "None reported"}
-            ]
-        }
-    }
-}
-
 student_descriptions = {
-    "student001": "Bold and street-smart",
-    "student002": "Detached and impulsive",
-    "student003": "Sensitive and self-critical",
-    "student004": "Tough-minded and emotionally guarded",
-    "student005": "Introspective and emotionally aware",
-    "student006": "Disciplined but emotionally withdrawn",
-    "student007": "Goal-oriented and emotionally steady",
-    "student008": "Friendly but cautious",
-    "student009": "Thoughtful and quietly confident",
-    "student010": "Restless and emotionally conflicted"
+    "student001": "14 years old. Bold and street-smart.",
+    "student002": "16 years old. Detached and impulsive.",
+    "student003": "14 years old. Sensitive and self-critical.",
+    "student004": "13 years old. Tough-minded and emotionally guarded.",
+    "student005": "15 years old. Introspective and emotionally aware.",
+    "student006": "17 years old. Disciplined but emotionally withdrawn.",
+    "student007": "16 years old. Goal-oriented and emotionally steady.",
+    "student008": "15 years old. Friendly but cautious.",
+    "student009": "17 years old. Thoughtful and quietly confident.",
+    "student010": "16 years old. Restless and emotionally conflicted."
 }
 
 student_profiles = {
@@ -203,8 +162,8 @@ class ConversationMonitor:
         self.github_enabled = self.setup_github()
         self.data = self.load_data()
         self.operation_count = 0
-        self.save_frequency = 1
-
+        self.save_frequency = 1  # 每次对话都保存
+    
     def setup_github(self):
         self.github_token = os.environ.get("GITHUB_TOKEN")
         self.github_repo = os.environ.get("GITHUB_REPO")
@@ -215,23 +174,20 @@ class ConversationMonitor:
         else:
             print("Using local file storage only")
         return enabled
-
+    
     def load_data(self):
         if self.github_enabled:
             self.download_from_github()
-
+        
         if os.path.exists(self.data_file):
             try:
                 with open(self.data_file, 'r', encoding='utf-8') as f:
                     data = json.load(f)
-                    # 修复点：确保 students_chatted 是 set
-                    if 'students_chatted' in data and isinstance(data['students_chatted'], list):
-                        data['students_chatted'] = set(data['students_chatted'])
                     print(f"Loaded {len(data.get('conversations', []))} conversations")
                     return data
             except Exception as e:
                 print(f"Error loading data: {e}")
-
+        
         empty_data = {
             'conversations': [],
             'last_updated': datetime.datetime.now().isoformat(),
@@ -239,20 +195,22 @@ class ConversationMonitor:
             'students_chatted': set(),
             'version': '3.0'
         }
-
+        
         self.save_data_to_file(empty_data)
         print("Created new conversation data file")
         return empty_data
-
+    
     def get_student_name(self, student_id):
         return name_dict.get(student_id, "Unknown")
-
+    
     def create_session_id(self):
+        """只在实际发送消息时创建session ID"""
         return str(uuid.uuid4())
-
+    
     def log_conversation(self, student_id, user_message, ai_response, scene_context="", response_time_ms=0):
+        """记录对话 - 简化版"""
         session_id = self.create_session_id()
-
+        
         conversation = {
             'id': len(self.data['conversations']) + 1,
             'session_id': session_id,
@@ -269,20 +227,20 @@ class ConversationMonitor:
             'ip_address': request.remote_addr if request else 'unknown',
             'user_agent': request.headers.get('User-Agent', 'unknown') if request else 'unknown'
         }
-
+        
         self.data['conversations'].append(conversation)
+        
+        # 更新统计
         self.data['total_conversations'] = len(self.data['conversations'])
-        # 修改后
         if 'students_chatted' not in self.data:
             self.data['students_chatted'] = set()
-        elif isinstance(self.data['students_chatted'], list):
-            self.data['students_chatted'] = set(self.data['students_chatted'])
         self.data['students_chatted'].add(student_id)
-
+        
         self.save_data()
         print(f"Logged conversation: {student_id} - {user_message[:50]}...")
-
+    
     def get_analytics_dashboard_data(self):
+        """获取分析数据"""
         conversations = self.data['conversations']
         if not conversations:
             return {
@@ -292,7 +250,8 @@ class ConversationMonitor:
                 'unique_students': 0,
                 'recent_conversations': 0
             }
-
+        
+        # 按学生分组统计
         student_stats = {}
         for conv in conversations:
             student = conv['student_name']
@@ -302,22 +261,25 @@ class ConversationMonitor:
                     'avg_response_time': 0,
                     'total_response_time': 0
                 }
-
+            
             student_stats[student]['total_conversations'] += 1
             student_stats[student]['total_response_time'] += conv.get('response_time_ms', 0)
-
+        
+        # 计算平均响应时间
         for student, stats in student_stats.items():
             if stats['total_conversations'] > 0:
                 stats['avg_response_time'] = stats['total_response_time'] / stats['total_conversations']
-
+        
+        # 时间分布统计
         hourly_distribution = {}
         for conv in conversations:
             hour = conv.get('hour', 0)
             hourly_distribution[hour] = hourly_distribution.get(hour, 0) + 1
-
+        
+        # 最近24小时对话
         recent_conversations = len([c for c in conversations 
                                   if (datetime.datetime.now() - datetime.datetime.fromisoformat(c['timestamp'])).days < 1])
-
+        
         return {
             'student_stats': student_stats,
             'hourly_distribution': hourly_distribution,
@@ -326,28 +288,30 @@ class ConversationMonitor:
             'recent_conversations': recent_conversations,
             'most_active_student': max(student_stats.items(), key=lambda x: x[1]['total_conversations'])[0] if student_stats else 'None'
         }
-
+    
     def export_to_csv(self):
+        """导出CSV"""
         output = StringIO()
         if self.data['conversations']:
             fieldnames = ['id', 'timestamp', 'student_name', 'user_message', 'ai_response', 
                          'scene_context', 'response_time_ms', 'day_of_week', 'hour', 'ip_address']
-
+            
             writer = csv.DictWriter(output, fieldnames=fieldnames)
             writer.writeheader()
-
+            
             for conv in self.data['conversations']:
                 row = {key: conv.get(key, '') for key in fieldnames}
                 writer.writerow(row)
-
+        
         return output.getvalue()
-
+    
     def save_data_to_file(self, data=None):
         if data is None:
             data = self.data
+        # 转换set为list以便JSON序列化
         if 'students_chatted' in data and isinstance(data['students_chatted'], set):
             data['students_chatted'] = list(data['students_chatted'])
-
+        
         data['last_updated'] = datetime.datetime.now().isoformat()
         try:
             with open(self.data_file, 'w', encoding='utf-8') as f:
@@ -357,13 +321,13 @@ class ConversationMonitor:
         except Exception as e:
             print(f"Error saving data: {e}")
             return False
-
+    
     def save_data(self, force_upload=False):
         self.operation_count += 1
         self.save_data_to_file()
         if self.github_enabled and (self.operation_count % self.save_frequency == 0 or force_upload):
             self.upload_to_github()
-
+    
     def download_from_github(self):
         if not self.github_enabled:
             return False
@@ -385,7 +349,7 @@ class ConversationMonitor:
         except Exception as e:
             print(f"Failed to download from GitHub: {e}")
         return False
-
+    
     def upload_to_github(self):
         if not self.github_enabled:
             return False
@@ -394,15 +358,15 @@ class ConversationMonitor:
                 content = f.read()
             import base64
             encoded_content = base64.b64encode(content.encode('utf-8')).decode('utf-8')
-
+            
             url = f"https://api.github.com/repos/{self.github_repo}/contents/{self.data_file}"
             headers = {'Authorization': f'token {self.github_token}', 'Accept': 'application/vnd.github.v3+json'}
-
+            
             get_response = requests.get(url, headers=headers, timeout=10)
             sha = None
             if get_response.status_code == 200:
                 sha = get_response.json()['sha']
-
+            
             data = {
                 'message': f'Update conversation data - {datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")}',
                 'content': encoded_content,
@@ -410,7 +374,7 @@ class ConversationMonitor:
             }
             if sha:
                 data['sha'] = sha
-
+            
             response = requests.put(url, headers=headers, json=data, timeout=15)
             if response.status_code in [200, 201]:
                 print("Data uploaded to GitHub successfully")
@@ -454,20 +418,30 @@ all_prompts = load_prompts()
 
 @app.route('/')
 def index():
-    return render_template('index.html', student_groups=student_groups)
+    # 不创建session，只在实际聊天时记录
+    characters = []
+    for student_id, name in name_dict.items():
+        characters.append({
+            'id': student_id,
+            'name': name,
+            'description': student_descriptions[student_id],
+            'avatar': f"avatar/{student_id}.png"
+        })
+    
+    return render_template('index.html', characters=characters)
 
 @app.route('/chat/<student_id>')
 def chat_page(student_id):
     if student_id not in name_dict:
         return redirect('/')
-
+    
     student = {
         'id': student_id,
         'name': name_dict[student_id],
         'profile': student_profiles.get(student_id, {}),
         'avatar': f"avatar/{student_id}.png"
     }
-
+    
     return render_template('chat.html', 
                          student=student,
                          scene_options=scene_options)
@@ -477,32 +451,32 @@ def send_message():
     try:
         if not request.is_json:
             return jsonify({'error': 'Content-Type must be application/json'}), 400
-
+        
         data = request.json
         message = data.get('message', '').strip()
         student_id = data.get('student_id', 'student001')
         scene_context = data.get('scene_context', '')
-
+        
         if not message:
             return jsonify({'error': 'Empty message'}), 400
-
+        
         if not os.environ.get("OPENAI_API_KEY"):
             return jsonify({'error': 'OpenAI API key not configured'}), 500
-
+        
         base_prompt = all_prompts.get(student_id, "You are a helpful assistant.")
         if scene_context:
             system_prompt = base_prompt + f"\n\nCurrent scenario context: {scene_context}"
         else:
             system_prompt = base_prompt
-
+        
         chat_history = session.get(f'history_{student_id}', [])
-
+        
         messages = [{"role": "system", "content": system_prompt}]
         for user_msg, bot_reply in chat_history[-10:]:
             messages.append({"role": "user", "content": user_msg})
             messages.append({"role": "assistant", "content": bot_reply})
         messages.append({"role": "user", "content": message})
-
+        
         start_time = datetime.datetime.now()
         response = client.chat.completions.create(
             model="gpt-4o-mini",
@@ -512,10 +486,11 @@ def send_message():
         )
         reply = response.choices[0].message.content.strip()
         response_time_ms = (datetime.datetime.now() - start_time).total_seconds() * 1000
-
+        
         chat_history.append([message, reply])
         session[f'history_{student_id}'] = chat_history
-
+        
+        # 只有在实际对话时才记录
         monitor.log_conversation(
             student_id=student_id,
             user_message=message,
@@ -523,13 +498,13 @@ def send_message():
             scene_context=scene_context,
             response_time_ms=response_time_ms
         )
-
+        
         return jsonify({
             'success': True,
             'reply': reply,
             'student_name': name_dict.get(student_id, 'Student')
         })
-
+        
     except Exception as e:
         error_msg = str(e)
         if "insufficient_quota" in error_msg:
@@ -540,7 +515,7 @@ def send_message():
             user_error = "API rate limit exceeded. Please try again in a moment."
         else:
             user_error = f"Service temporarily unavailable: {error_msg}"
-
+        
         return jsonify({'error': user_error}), 500
 
 @app.route('/api/clear_chat', methods=['POST'])
@@ -560,7 +535,7 @@ def test_api():
     })
 
 # ================================
-# 管理员路由 (保持之前的代码)
+# 管理员路由
 # ================================
 
 def generate_admin_dashboard_html(analytics_data):
@@ -621,7 +596,7 @@ def generate_admin_dashboard_html(analytics_data):
         <div class="card">
             <h2>Student Activity</h2>
             <div class="student-stats">'''
-
+    
     for student, stats in analytics_data['student_stats'].items():
         html_content += f'''
                 <div class="student-card">
@@ -629,9 +604,38 @@ def generate_admin_dashboard_html(analytics_data):
                     <p><strong>Conversations:</strong> {stats['total_conversations']}</p>
                     <p><strong>Avg Response Time:</strong> {stats['avg_response_time']:.0f}ms</p>
                 </div>'''
-
+    
     html_content += '''
             </div>
+        </div>
+        
+        <div class="card">
+            <h2>Recent Conversations</h2>
+            <table>
+                <tr>
+                    <th>Time</th>
+                    <th>Student</th>
+                    <th>User Message</th>
+                    <th>AI Response</th>
+                    <th>Scene</th>
+                </tr>'''
+    
+    recent_conversations = sorted(monitor.data.get('conversations', []), 
+                                key=lambda x: x['timestamp'], reverse=True)[:10]
+    
+    for conv in recent_conversations:
+        timestamp = datetime.datetime.fromisoformat(conv['timestamp']).strftime('%m/%d %H:%M')
+        html_content += f'''
+                <tr>
+                    <td>{timestamp}</td>
+                    <td>{conv['student_name']}</td>
+                    <td class="message-preview">{conv['user_message'][:100]}...</td>
+                    <td class="message-preview">{conv['ai_response'][:100]}...</td>
+                    <td>{conv.get('scene_context', 'None')[:30]}</td>
+                </tr>'''
+    
+    html_content += '''
+            </table>
         </div>
         
         <div class="card">
@@ -639,18 +643,19 @@ def generate_admin_dashboard_html(analytics_data):
             <p>Export conversation data for analysis:</p>
             <a href="/admin/export/csv" class="btn">Download CSV</a>
             <a href="/admin/data/raw" class="btn">View Raw JSON</a>
+            <a href="/admin/conversations" class="btn">View All Conversations</a>
         </div>
     </div>
 </body>
 </html>'''
-
+    
     return html_content
 
 @app.route('/admin')
 def admin_dashboard():
     if session.get('admin_authenticated') != True:
         return redirect('/admin/login')
-
+    
     analytics_data = monitor.get_analytics_dashboard_data()
     return generate_admin_dashboard_html(analytics_data)
 
@@ -659,7 +664,7 @@ def admin_login():
     if request.method == 'POST':
         password = request.form.get('password')
         admin_password = os.environ.get("ADMIN_PASSWORD", "admin123")
-
+        
         if password == admin_password:
             session['admin_authenticated'] = True
             return redirect('/admin')
@@ -667,7 +672,7 @@ def admin_login():
             error_message = "Invalid password. Please try again."
     else:
         error_message = ""
-
+    
     login_html = '''<!DOCTYPE html>
 <html>
 <head>
@@ -681,19 +686,4 @@ def admin_login():
         .form-group input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; box-sizing: border-box; }
         .btn { background: #4a90e2; color: white; padding: 12px 24px; border: none; border-radius: 4px; cursor: pointer; width: 100%; font-size: 16px; }
         .btn:hover { background: #357abd; }
-        .error { color: #ff6b6b; text-align: center; margin-top: 10px; }
-    </style>
-</head>
-<body>
-    <div class="login-form">
-        <h2>Admin Login</h2>
-        <form method="post">
-            <div class="form-group">
-                <label for="password">Password:</label>
-                <input type="password" id="password" name="password" required>
-            </div>
-            <button type="submit" class="btn">Login</button>''' + (f'<p class="error">{error_message}</p>' if error_message else '') + '''
-        </form>
-    </div>
-</body>
-</html>'''
+        .error { color: #ff6
